@@ -1,44 +1,43 @@
-module.exports = function(app) {
-    const store = require('./storeController');
-    const jwtMiddleware = require('../../../config/jwtMiddleware');
-    const passport = require('passport');
-    const session = require('express-session');
-    const KakaoStrategy = require('passport-kakao').Strategy;
+module.exports = function (app) {
+  const store = require('./storeController');
+  const jwtMiddleware = require('../../../config/jwtMiddleware');
+  const passport = require('passport');
+  const session = require('express-session');
+  const KakaoStrategy = require('passport-kakao').Strategy;
 
+  // 22. 스토어 카테고리로 조회 API
+  app.get('/app/products/categories', store.getCategoryProduct);
 
-    // 22. 스토어 카테고리로 조회 API
-    app.get('/app/products/categories', store.getCategoryProduct);
+  // 23. 스토어 특정 상품 조회 API
+  app.get('/app/products/users/:userId', jwtMiddleware, store.getProduct);
 
-    // 23. 스토어 특정 상품 조회 API
-    app.get('/app/products/users/:userId',jwtMiddleware, store.getProduct);
+  // 24. 베스트 상품 조회 API
+  app.get('/app/products/best', store.getBestProduct);
 
-    // 24. 베스트 상품 조회 API
-    app.get('/app/products/best', store.getBestProduct);
+  // 26. 문의 조회 API
+  app.get('/app/products/:productId/inquiry', store.getInquiry);
 
-    // 26. 문의 조회 API
-    app.get('/app/products/:productId/inquiry', store.getInquiry);
+  // 27. 배송/교환/환불 정보 조회 API
+  app.get('/app/products/:productId/info', store.getInfo);
 
-    // 27. 배송/교환/환불 정보 조회 API
-    app.get('/app/products/:productId/info', store.getInfo);
+  // 30. 상품 리뷰 조회 API
+  app.get('/app/products/:productId/reviews', store.getReviews);
 
-    // 30. 상품 리뷰 조회 API
-    app.get('/app/products/:productId/reviews', store.getReviews);
+  // 38. 이메일 뒷자리 조회 API
+  app.get('/app/backemails', store.getBackEmail);
 
-    // 38. 이메일 뒷자리 조회 API
-    app.get('/app/backemails', store.getBackEmail);
+  // 40. 배송 요청사항 조회 API
+  app.get('/app/requests', store.getRequests);
 
-    // 40. 배송 요청사항 조회 API
-    app.get('/app/requests', store.getRequests);
+  // 49. 상품 스타일링샷 조회 API
+  app.get('/app/products/styling-shot', store.getStylingShot);
 
-    // 49. 상품 스타일링샷 조회 API
-    app.get('/app/products/styling-shot', store.getStylingShot);
+  // 50. 스토어 특정 상품 리뷰 조회 API
+  app.get('/app/products/reviews', store.getReview);
 
-    // 50. 스토어 특정 상품 리뷰 조회 API
-    app.get('/app/products/reviews', store.getReview);
+  // 51. 스토어 특정 상품 문의 갯수 조회 API
+  app.get('/app/products/inquiries', store.getInquiryCount);
 
-    // 51. 스토어 특정 상품 문의 갯수 조회 API
-    app.get('/app/products/inquiries', store.getInquiryCount);
-
-    // 52. 스토어 특정 상품과 비슷한 상품 조회 API
-    app.get('/app/products/similars', store.getSimilar);
-}
+  // 52. 스토어 특정 상품과 비슷한 상품 조회 API
+  app.get('/app/products/similars', store.getSimilar);
+};
