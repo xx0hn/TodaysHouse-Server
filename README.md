@@ -3,8 +3,7 @@
 오늘의집 앱 클론코딩 프로젝트
 
 ## ERD
-URL : https://aquerytool.com/aquerymain/index/?rurl=34abeb03-8674-4e46-b91f-f4b05dba67ab&
-
+URL : [AQuary Tool] (https://aquerytool.com/aquerymain/index/?rurl=34abeb03-8674-4e46-b91f-f4b05dba67ab&)
 Password : z3cp7m
 
 ## Tech
@@ -15,6 +14,40 @@ Password : z3cp7m
 ## 적용 기술
 - 데이터 무결성을 지키기 위한 트랜잭션 적용
 - [과도한 횟수의 요청이나 DOS로 인한 서버 오작동을 막기 위한 레이트리미팅 적용](https://velog.io/@xx0hn/Server-Node.js-%EB%A0%88%EC%9D%B4%ED%8A%B8%EB%A6%AC%EB%AF%B8%ED%8C%85Rate-Limiting-%EC%A0%81%EC%9A%A9)
+
+## Directory Structure
+```
+config
+ ├── baseResponseStatus.js
+ ├── express.js
+ ├── jwtMiddleware.js
+ ├── limiter.js
+ ├── response.js
+ └── winston.js
+src
+ └── app
+      ├── Post
+      |    ├── postController.js
+      |    ├── postDao.js
+      |    ├── postProvider.js
+      |    ├── postRoute.js
+      |    └── postService.js
+      ├── Store
+      |    ├── storeController.js
+      |    ├── storeDao.js
+      |    ├── storeProvider.js
+      |    ├── storeRoute.js
+      |    └── storeService.js 
+      └── User
+           ├── userController.js
+           ├── userDao.js
+           ├── userProvider.js
+           ├── userRoute.js
+           └── userService.js
+.gitignore
+index.js
+package.json
+```
 
 ## API list
 1.	POST	`/app/sign-up`	유저 생성 API (회원가입)
@@ -78,5 +111,4 @@ Password : z3cp7m
 59.	GET	`/app/users/:userId/otherpage-housewarm`	다른 유저 페이지 집들이 조회 API
 60.	GET	`/app/users/:userId/otherpage-scrap`	다른 유저 페이지 스크랩 조회 API
 61.	GET	`/app/posts/housewarms-products/:houseWarmId`	 집들이 게시물 포함된 모든 상품 조회API
-
 **  GET	`/app/push`	매 정시마다 푸시 알림 API
