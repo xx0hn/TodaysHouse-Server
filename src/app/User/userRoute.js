@@ -1,169 +1,166 @@
-module.exports = function(app){
-    const user = require('./userController');
-    const jwtMiddleware = require('../../../config/jwtMiddleware');
-    const passport = require('passport');
-    const session = require('express-session');
-    const KakaoStrategy = require('passport-kakao').Strategy;
+module.exports = function (app) {
+  const user = require('./userController');
+  const jwtMiddleware = require('../../../config/jwtMiddleware');
+  const passport = require('passport');
+  const session = require('express-session');
+  const KakaoStrategy = require('passport-kakao').Strategy;
+  const { apiLimiter } = require('../../../config/limiter');
 
+  app.use(session({ secret: 'SECRET_CODE', resave: true, saveUninitialized: false }));
+  app.use(passport.initialize());
+  app.use(passport.session());
+  passport.use(
+    'kakao-login',
+    new KakaoStrategy(
+      {
+        clientID: 'ddbe1ff5300971f37b81413e6e4c6364',
+        clientSecret: 'VmduDQJHUTBuAAxVabxEtMMlWrjx4nvS',
+        callbackURL: '/auth/kakao/callback',
+      },
+      function (accessToken, refreshToken, profile, done) {
+        result = {
+          accessToken: accessToken,
+          refreshToken: refreshToken,
+          profile: profile,
+        };
+        console.log('KakaoStrategy', result);
+        return done;
+      },
+    ),
+  );
+  passport.serializeUser((user, done) => {
+    done(null, user); // user객체가 deserializeUser로 전달됨.
+  });
+  passport.deserializeUser((user, done) => {
+    done(null, user); // 여기의 user가 req.user가 됨
+  });
 
-    app.use(session({secret: 'SECRET_CODE', resave: true, saveUninitialized: false}));
-    app.use(passport.initialize());
-    app.use(passport.session());
-    passport.use(
-        'kakao-login',
-        new KakaoStrategy(
-            {
-                clientID: 'ddbe1ff5300971f37b81413e6e4c6364',
-                clientSecret: 'VmduDQJHUTBuAAxVabxEtMMlWrjx4nvS',
-                callbackURL: '/auth/kakao/callback',
-            },
-            function (accessToken, refreshToken, profile, done) {
-                result = {
-                    accessToken: accessToken,
-                    refreshToken: refreshToken,
-                    profile: profile,
-                };
-                console.log('KakaoStrategy', result);
-                return done;
-            },
-        ),
-    );
-    passport.serializeUser((user, done) => {
-        done(null, user); // user객체가 deserializeUser로 전달됨.
-    });
-    passport.deserializeUser((user, done) => {
-        done(null, user); // 여기의 user가 req.user가 됨
-    });
+  // 1. 유저 생성 (회원가입) API
+  app.post('/app/sign-up', user.postUsers);
 
+  // 2. 로그인 (JWT 생성) API
+  app.post('/app/login', user.login);
 
-    // 1. 유저 생성 (회원가입) API
-    app.post('/app/sign-up', user.postUsers);
+  // 3. 유저 마이페이지 조회 API
+  app.get('/app/users/:userId/mypages', jwtMiddleware, user.getMyPages);
 
-    // 2. 로그인 (JWT 생성) API
-    app.post('/app/login', user.login);
+  // 4. 다른 유저 페이지 조회 API
+  app.get('/app/users/:userId/profiles', jwtMiddleware, user.getOtherProfiles);
 
-    // 3. 유저 마이페이지 조회 API
-    app.get('/app/users/:userId/mypages', jwtMiddleware, user.getMyPages);
+  // 5. 카카오 로그인 API
+  app.post('/app/login/kakao', user.loginKakao);
+  app.get('/auth/kakao/callback', passport.authenticate('kakao-login', { failureRedirect: '/auth', successRedirect: '/' }));
 
-    // 4. 다른 유저 페이지 조회 API
-    app.get('/app/users/:userId/profiles', jwtMiddleware, user.getOtherProfiles);
+  // 6. 프로필 수정 API
+  app.patch('/app/users/:userId/profiles', jwtMiddleware, user.patchProfiles);
 
-    // 5. 카카오 로그인 API
-    app.post('/app/login/kakao', user.loginKakao);
-    app.get('/auth/kakao/callback', passport.authenticate('kakao-login', { failureRedirect: '/auth', successRedirect: '/' }));
+  // 7. 스크랩 폴더 생성 API
+  app.post('/app/users/:userId/scrap-folders', apiLimiter, jwtMiddleware, user.postScrapFolders);
 
-    // 6. 프로필 수정 API
-    app.patch('/app/users/:userId/profiles', jwtMiddleware, user.patchProfiles);
+  // 8. 스크랩 폴더 수정 API
+  app.patch('/app/users/:userId/scrap-folders', jwtMiddleware, user.patchScrapFolders);
 
-    // 7. 스크랩 폴더 생성 API
-    app.post('/app/users/:userId/scrap-folders', jwtMiddleware, user.postScrapFolders);
+  // 9. 스크랩 API
+  app.post('/app/users/:userId/scraps', apiLimiter, jwtMiddleware, user.postScrap);
 
-    // 8. 스크랩 폴더 수정 API
-    app.patch('/app/users/:userId/scrap-folders', jwtMiddleware, user.patchScrapFolders);
+  // 10. 스크랩 조회 API
+  app.get('/app/users/:userId/scraps', jwtMiddleware, user.getScrap);
 
-    // 9. 스크랩 API
-    app.post('/app/users/:userId/scraps', jwtMiddleware, user.postScrap);
+  // 11. 좋아요 API
+  app.post('/app/users/:userId/likes', apiLimiter, jwtMiddleware, user.postLike);
 
-    // 10. 스크랩 조회 API
-    app.get('/app/users/:userId/scraps', jwtMiddleware, user.getScrap);
+  // 12. 좋아요 조회 API
+  app.get('/app/users/:userId/likes', jwtMiddleware, user.getLike);
 
-    // 11. 좋아요 API
-    app.post('/app/users/:userId/likes', jwtMiddleware, user.postLike);
+  // 13. 팔로우 API
+  app.post('/app/users/:userId/follows', apiLimiter, jwtMiddleware, user.postFollow);
 
-    // 12. 좋아요 조회 API
-    app.get('/app/users/:userId/likes', jwtMiddleware, user.getLike);
+  // 14. 팔로우 조회 API
+  app.get('/app/users/:userId/follows', user.getFollow);
 
-    // 13. 팔로우 API
-    app.post('/app/users/:userId/follows', jwtMiddleware, user.postFollow);
+  // 15. 댓글 달기 API
+  app.post('/app/users/:userId/comments', apiLimiter, jwtMiddleware, user.postComment);
 
-    // 14. 팔로우 조회 API
-    app.get('/app/users/:userId/follows', user.getFollow);
+  // 16. 댓글 수정 API
+  app.patch('/app/users/:userId/comments', jwtMiddleware, user.patchComment);
 
-    // 15. 댓글 달기 API
-    app.post('/app/users/:userId/comments', jwtMiddleware, user.postComment);
+  // 21. 스토어 홈 카테고리 조회 API
+  app.get('/app/users/:userId/store-categories', jwtMiddleware, user.getStoreHome);
 
-    // 16. 댓글 수정 API
-    app.patch('/app/users/:userId/comments', jwtMiddleware, user.patchComment);
+  // 25. 문의 생성 API
+  app.post('/app/users/:userId/inquiry', apiLimiter, jwtMiddleware, user.postInquiry);
 
-    // 21. 스토어 홈 카테고리 조회 API
-    app.get('/app/users/:userId/store-categories', jwtMiddleware, user.getStoreHome);
+  // 28. 주문 생성 API
+  app.post('/app/users/:userId/orders', apiLimiter, jwtMiddleware, user.postOrder);
 
-    // 25. 문의 생성 API
-    app.post('/app/users/:userId/inquiry', jwtMiddleware, user.postInquiry);
+  // 29. 리뷰 생성 API
+  app.post('/app/users/:userId/reviews', apiLimiter, jwtMiddleware, user.postReview);
 
-    // 28. 주문 생성 API
-    app.post('/app/users/:userId/orders', jwtMiddleware, user.postOrder);
+  // 31. 자동 로그인 API
+  app.get('/app/auto-login', jwtMiddleware, user.jwtCheck);
 
-    // 29. 리뷰 생성 API
-    app.post('/app/users/:userId/reviews', jwtMiddleware, user.postReview);
+  // 32. 이메일 중복 체크 API
+  app.get('/app/emails', user.emailCheck);
 
-    // 31. 자동 로그인 API
-    app.get('/app/auto-login', jwtMiddleware, user.jwtCheck);
+  // 33. 닉네임 중복 체크 API
+  app.get('/app/nicknames', user.nicknameCheck);
 
-    // 32. 이메일 중복 체크 API
-    app.get('/app/emails', user.emailCheck);
+  // 34. 확인 비밀번호 체크 API
+  app.get('/app/passwords', user.passwordCheck);
 
-    // 33. 닉네임 중복 체크 API
-    app.get('/app/nicknames', user.nicknameCheck);
+  // 35. 나의 쇼핑 정보 조회 API
+  app.get('/app/users/:userId/myshopping', jwtMiddleware, user.getMyShopping);
 
-    // 34. 확인 비밀번호 체크 API
-    app.get('/app/passwords', user.passwordCheck);
+  // 36. 주문/배송 조회 API
+  app.get('/app/users/:userId/orders', jwtMiddleware, user.getOrders);
 
-    // 35. 나의 쇼핑 정보 조회 API
-    app.get('/app/users/:userId/myshopping', jwtMiddleware, user.getMyShopping);
+  // 37. 비밀번호 변경 API
+  app.patch('/app/users/:userId/password', jwtMiddleware, user.patchPassword);
 
-    // 36. 주문/배송 조회 API
-    app.get('/app/users/:userId/orders',jwtMiddleware, user.getOrders);
+  // 39. 사용 가능 쿠폰 조회 API
+  app.get('/app/users/:userId/coupons', jwtMiddleware, user.getCoupons);
 
-    // 37. 비밀번호 변경 API
-    app.patch('/app/users/:userId/password',jwtMiddleware, user.patchPassword);
+  // 41. 리뷰 도움 API
+  app.post('/app/users/:userId/helped-reviews', apiLimiter, jwtMiddleware, user.postHelp);
 
-    // 39. 사용 가능 쿠폰 조회 API
-    app.get('/app/users/:userId/coupons', jwtMiddleware, user.getCoupons);
+  // 45. 스토어 홈 최근 본 상품 조회 API
+  app.get('/app/users/:userId/recent-products', jwtMiddleware, user.getRecentProducts);
 
-    // 41. 리뷰 도움 API
-    app.post('/app/users/:userId/helped-reviews', jwtMiddleware, user.postHelp);
+  // 46. 스토어 홈 최근 본 상품과 비슷한 상품 조회 API
+  app.get('/app/users/:userId/recent-similar', jwtMiddleware, user.getRecentSimilar);
 
-    // 45. 스토어 홈 최근 본 상품 조회 API
-    app.get('/app/users/:userId/recent-products', jwtMiddleware, user.getRecentProducts);
+  // 47. 스토어 홈 인기 키워드 조회 API
+  app.get('/app/users/:userId/popular-keywords', jwtMiddleware, user.getPopularKeywords);
 
-    // 46. 스토어 홈 최근 본 상품과 비슷한 상품 조회 API
-    app.get('/app/users/:userId/recent-similar', jwtMiddleware, user.getRecentSimilar);
+  // 48. 스토어 홈 인기 상품 조회 API
+  app.get('/app/users/:userId/popular-products', jwtMiddleware, user.getPopularProducts);
 
-    // 47. 스토어 홈 인기 키워드 조회 API
-    app.get('/app/users/:userId/popular-keywords', jwtMiddleware, user.getPopularKeywords);
+  // 53. 나의 쇼핑 주문 현황 조회 API
+  app.get('/app/users/:userId/current-orders', jwtMiddleware, user.getCurrentOrders);
 
-    // 48. 스토어 홈 인기 상품 조회 API
-    app.get('/app/users/:userId/popular-products', jwtMiddleware, user.getPopularProducts);
+  // 54. 나의 쇼핑 스크랩북, 문의, 리뷰 수 조회 API
+  app.get('/app/users/:userId/shopping-status', jwtMiddleware, user.getShoppingStatus);
 
-    // 53. 나의 쇼핑 주문 현황 조회 API
-    app.get('/app/users/:userId/current-orders', jwtMiddleware, user.getCurrentOrders);
+  // 55. 마이페이지 나의 쇼핑 조회 API
+  app.get('/app/users/:userId/mypage-shopping', jwtMiddleware, user.getMyPageShopping);
 
-    // 54. 나의 쇼핑 스크랩북, 문의, 리뷰 수 조회 API
-    app.get('/app/users/:userId/shopping-status', jwtMiddleware, user.getShoppingStatus);
+  // 56. 마이페이지 스크랩 조회 API
+  app.get('/app/users/:userId/mypage-scrap', jwtMiddleware, user.getMyPageScrap);
 
-    // 55. 마이페이지 나의 쇼핑 조회 API
-    app.get('/app/users/:userId/mypage-shopping', jwtMiddleware, user.getMyPageShopping);
+  // 57. 마이페이지 집들이 조회 API
+  app.get('/app/users/:userId/mypage-housewarm', jwtMiddleware, user.getMyPageHouseWarm);
 
-    // 56. 마이페이지 스크랩 조회 API
-    app.get('/app/users/:userId/mypage-scrap', jwtMiddleware, user.getMyPageScrap);
+  // 58. 마이페이지 리뷰수 조회 API
+  app.get('/app/users/:userId/mypage-reviewcount', jwtMiddleware, user.getMyPageReviewCount);
 
-    // 57. 마이페이지 집들이 조회 API
-    app.get('/app/users/:userId/mypage-housewarm', jwtMiddleware, user.getMyPageHouseWarm);
+  // 59. 다른 유저 페이지 집들이 조회 API
+  app.get('/app/users/:userId/otherpage-housewarm', jwtMiddleware, user.getOtherHouseWarm);
 
-    // 58. 마이페이지 리뷰수 조회 API
-    app.get('/app/users/:userId/mypage-reviewcount', jwtMiddleware, user.getMyPageReviewCount);
+  // 60. 다른 유저 페이지 스크랩 조회 API
+  app.get('/app/users/:userId/otherpage-scrap', jwtMiddleware, user.getOtherScrap);
 
-    // 59. 다른 유저 페이지 집들이 조회 API
-    app.get('/app/users/:userId/otherpage-housewarm', jwtMiddleware, user.getOtherHouseWarm);
+  // **. 정시마다 푸시 알림 API
+  app.get('/app/push', user.pushAlarms);
 
-    // 60. 다른 유저 페이지 스크랩 조회 API
-    app.get('/app/users/:userId/otherpage-scrap', jwtMiddleware, user.getOtherScrap);
-
-    // **. 정시마다 푸시 알림 API
-    app.get('/app/push', user.pushAlarms);
-
-    // TODO: After 로그인 인증 방법 (JWT)
-
-
+  // TODO: After 로그인 인증 방법 (JWT)
 };
