@@ -15,7 +15,6 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { logger } = require('../../../config/winston');
 const baseResponseStatus = require('../../../config/baseResponseStatus');
-const { setCache } = require('../../../config/redis');
 
 /**
  * API No. 17
@@ -167,69 +166,21 @@ exports.getSearch = async function (req, res) {
       UserCount: getUserCounts,
       Users: getSearchUser,
     });
-    if (result.length) {
-      setCache('search/' + keyword, result);
-      res.status(200).send({
-        ok: true,
-        data: searchResult,
-      });
-    } else {
-      res.status(400).send({
-        ok: false,
-        message: 'No more pages',
-      });
-    }
     return res.send(response(baseResponse.SUCCESS, result));
   } else if (type === 'STORE') {
     const getSearchStore = await postProvider.getSearchProducts(keyword, keywords, keywordss, keywordsss, keywordssss);
     const count = await postProvider.getStoreCounts(getSearchStore.length);
     result.push({ StoreCount: count, Stores: getSearchStore });
-    if (result.length) {
-      setCache('search/' + keyword, result);
-      res.status(200).send({
-        ok: true,
-        data: searchResult,
-      });
-    } else {
-      res.status(400).send({
-        ok: false,
-        message: 'No more pages',
-      });
-    }
     return res.send(response(baseResponse.SUCCESS, result));
   } else if (type === 'HOUSEWARM') {
     const getSearchHouseWarm = await postProvider.getSearchHouseWarms(keyword, keywords, keywordss, keywordsss, keywordssss);
     const count = await postProvider.getHouseWarmCounts(getSearchHouseWarm.length);
     result.push({ HouseWarmCount: count, HouseWarms: getSearchHouseWarm });
-    if (result.length) {
-      setCache('search/' + keyword, result);
-      res.status(200).send({
-        ok: true,
-        data: searchResult,
-      });
-    } else {
-      res.status(400).send({
-        ok: false,
-        message: 'No more pages',
-      });
-    }
     return res.send(response(baseResponse.SUCCESS, result));
   } else if (type === 'USER') {
     const getSearchUser = await postProvider.getSearchUsers(keyword);
     const count = await postProvider.getUserCounts(getSearchUser.length);
     result.push({ UserCount: count, Users: getSearchUser });
-    if (result.length) {
-      setCache('search/' + keyword, result);
-      res.status(200).send({
-        ok: true,
-        data: searchResult,
-      });
-    } else {
-      res.status(400).send({
-        ok: false,
-        message: 'No more pages',
-      });
-    }
     return res.send(response(baseResponse.SUCCESS, result));
   }
   return res.send(errResponse(baseResponse.SEARCH_TYPE_ERROR));
