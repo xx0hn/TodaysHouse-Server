@@ -15,7 +15,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { logger } = require('../../../config/winston');
 const baseResponseStatus = require('../../../config/baseResponseStatus');
-
+const redisControl = require('../../../config/redis');
 /**
  * API No. 17
  * API Name : 인기탭 조회 API
@@ -166,7 +166,19 @@ exports.getSearch = async function (req, res) {
       UserCount: getUserCounts,
       Users: getSearchUser,
     });
-    return res.send(response(baseResponse.SUCCESS, result));
+    if (result.length) {
+      redisControl.setValue(keyword, result);
+      res.status(200).send({
+        ok: true,
+        data: result,
+      });
+    } else {
+      res.status(400).send({
+        ok: false,
+        message: 'No more pages',
+      });
+    }
+    // return res.send(response(baseResponse.SUCCESS, result));
   } else if (type === 'STORE') {
     const getSearchStore = await postProvider.getSearchProducts(keyword, keywords, keywordss, keywordsss, keywordssss);
     const count = await postProvider.getStoreCounts(getSearchStore.length);
