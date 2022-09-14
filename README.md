@@ -22,6 +22,7 @@ config
  ├── express.js
  ├── jwtMiddleware.js
  ├── limiter.js
+ ├── redis.js
  ├── response.js
  └── winston.js
 src
