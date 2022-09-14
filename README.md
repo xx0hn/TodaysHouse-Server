@@ -1,6 +1,6 @@
 # TodayHouse-Server
 ## Introduce
-오늘의집 앱 클론코딩 프로젝트
+오늘의집 서버 클론코딩 프로젝트
 
 ## ERD
 - [AQuary Tool](https://aquerytool.com/aquerymain/index/?rurl=34abeb03-8674-4e46-b91f-f4b05dba67ab&)
