@@ -161,6 +161,4 @@ module.exports = function (app) {
 
   // **. 정시마다 푸시 알림 API
   app.get('/app/push', user.pushAlarms);
-
-  // TODO: After 로그인 인증 방법 (JWT)
 };

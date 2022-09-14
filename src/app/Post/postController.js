@@ -40,7 +40,19 @@ exports.getPopular = async function (req, res) {
     getBest.push(getCategoryName, getCategoryBest);
   }
   result.push({ TodayStory: getTodayStory, ProductCategories: getCategory, BestProduct: getBest });
-  return res.send(response(baseResponse.SUCCESS, result));
+  if (result.length) {
+    redisControl.setCache('popular/' + categoryId, result);
+    res.status(200).send({
+      ok: true,
+      data: result,
+    });
+  } else {
+    res.status(400).send({
+      ok: false,
+      message: 'No more pages',
+    });
+  }
+  // return res.send(response(baseResponse.SUCCESS, result));
 };
 
 /**
@@ -167,7 +179,7 @@ exports.getSearch = async function (req, res) {
       Users: getSearchUser,
     });
     if (result.length) {
-      redisControl.setValue(keyword, result);
+      redisControl.setValue('search/' + keyword, result);
       res.status(200).send({
         ok: true,
         data: result,
@@ -183,17 +195,53 @@ exports.getSearch = async function (req, res) {
     const getSearchStore = await postProvider.getSearchProducts(keyword, keywords, keywordss, keywordsss, keywordssss);
     const count = await postProvider.getStoreCounts(getSearchStore.length);
     result.push({ StoreCount: count, Stores: getSearchStore });
-    return res.send(response(baseResponse.SUCCESS, result));
+    if (result.length) {
+      redisControl.setValue('search/' + keyword, result);
+      res.status(200).send({
+        ok: true,
+        data: result,
+      });
+    } else {
+      res.status(400).send({
+        ok: false,
+        message: 'No more pages',
+      });
+    }
+    // return res.send(response(baseResponse.SUCCESS, result));
   } else if (type === 'HOUSEWARM') {
     const getSearchHouseWarm = await postProvider.getSearchHouseWarms(keyword, keywords, keywordss, keywordsss, keywordssss);
     const count = await postProvider.getHouseWarmCounts(getSearchHouseWarm.length);
     result.push({ HouseWarmCount: count, HouseWarms: getSearchHouseWarm });
-    return res.send(response(baseResponse.SUCCESS, result));
+    if (result.length) {
+      redisControl.setValue('search/' + keyword, result);
+      res.status(200).send({
+        ok: true,
+        data: result,
+      });
+    } else {
+      res.status(400).send({
+        ok: false,
+        message: 'No more pages',
+      });
+    }
+    // return res.send(response(baseResponse.SUCCESS, result));
   } else if (type === 'USER') {
     const getSearchUser = await postProvider.getSearchUsers(keyword);
     const count = await postProvider.getUserCounts(getSearchUser.length);
     result.push({ UserCount: count, Users: getSearchUser });
-    return res.send(response(baseResponse.SUCCESS, result));
+    if (result.length) {
+      redisControl.setValue('search/' + keyword, result);
+      res.status(200).send({
+        ok: true,
+        data: result,
+      });
+    } else {
+      res.status(400).send({
+        ok: false,
+        message: 'No more pages',
+      });
+    }
+    // return res.send(response(baseResponse.SUCCESS, result));
   }
   return res.send(errResponse(baseResponse.SEARCH_TYPE_ERROR));
 };
